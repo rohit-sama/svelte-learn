@@ -1,18 +1,35 @@
 <script>
+import { authHandlers } from "../store/store";
+
   let email = "";
   let password = "";
   let confirmPass = "";
   let error = false;
   let register = false;
+  let authenticating = false;
 
-  $: console.log(email, password, confirmPass);
+  async function handleAuthenticate() {
+        if (authenticating) {
+            return;
+        }
+        if (!email || !password || (register && !confirmPass)) {
+            error = true;
+            return;
+        }
+        authenticating = true;
 
-  function handleAuthenticate() {
-    if (!email || !password | (register && !confirmPass)) {
-      error = true;
-      return;
+        try {
+            if (!register) {
+                await authHandlers.login(email, password);
+            } else {
+                await authHandlers.signup(email, password);
+            }
+        } catch (err) {
+            console.log("There was an auth error", err);
+            error = true;
+            authenticating = false;
+        }
     }
-  }
   function handleRegister() {
     register = !register
   }
@@ -42,7 +59,13 @@
         />
       </label>
     {/if}
-    <button>Submit</button>
+    <button on:click={handleAuthenticate} type="button" class="submitBtn">
+      {#if authenticating}
+          <i class="fa-solid fa-spinner loadingSpinner" />
+      {:else}
+          Submit
+      {/if}
+  </button>
   </form>
   <div class="options">
     <p>or</p>
