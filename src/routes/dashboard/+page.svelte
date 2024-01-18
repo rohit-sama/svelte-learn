@@ -1,9 +1,18 @@
 <script>
-  import { authHandlers } from "../../store/store";
+  import { authHandlers, authStore } from "../../store/store";
+  import { doc, setDoc } from "firebase/firestore"; 
+  import { db } from "../../lib/firebase/firebase";
 
   let todoLIst = ["learn svelte"];
   let curr = "";
   let error = false;
+
+
+
+authStore.subscribe((curr) => {
+  todoLIst = curr.data.todos;
+})
+
 
   function AddTodo() {
     error = false;
@@ -30,13 +39,31 @@
     });
     todoLIst = newTOdo;
   }
+
+  async function handleSave() {
+        try {
+            const userRef = doc(db, "users", $authStore.user.uid);
+            await setDoc(
+                userRef,
+                {
+                    todos: todoLIst,
+                },
+                { merge: true }
+            );
+        } catch (err) {
+            console.log("There was an error saving your information");
+        }
+    }
+
 </script>
+
+{#if !$authStore.loading}
 
 <div class="mainContainer">
   <div class="headerContainer">
     <h1>Todo</h1>
     <div class="headerButton">
-        <button> <i class="fa-regular fa-floppy-disk" />Save</button>
+        <button on:click={handleSave}> <i class="fa-regular fa-floppy-disk" />Save</button>
 
         <button on:click={authHandlers.signout}> <i class="fa-solid fa-right-from-bracket" />Sign Out</button>
     </div>
@@ -71,6 +98,7 @@
     <button on:click={AddTodo}> Add</button>
   </div>
 </div>
+{/if}
 
 <style>
   .mainContainer {
